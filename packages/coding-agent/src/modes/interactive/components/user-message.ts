@@ -1,12 +1,13 @@
-import { Box, Container, Markdown, type MarkdownTheme } from "@earendil-works/pi-tui";
+import { Container, Markdown, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 
 const OSC133_ZONE_START = "\x1b]133;A\x07";
 const OSC133_ZONE_END = "\x1b]133;B\x07";
 const OSC133_ZONE_FINAL = "\x1b]133;C\x07";
+const BAR = "\u258c";
 
 /**
- * Component that renders a user message
+ * Grok-style user message with left accent bar
  */
 export class UserMessageComponent extends Container {
 	private text: string;
@@ -28,11 +29,11 @@ export class UserMessageComponent extends Container {
 
 	private rebuild(): void {
 		this.clear();
-		const contentBox = new Box(this.outputPad, 1, (content: string) => theme.bg("userMessageBg", content));
-		contentBox.addChild(
+		// Grok-style: no background box, accent bar added in render()
+		this.addChild(
 			new Markdown(
 				this.text,
-				0,
+				this.outputPad,
 				0,
 				this.markdownTheme,
 				{
@@ -41,7 +42,6 @@ export class UserMessageComponent extends Container {
 				{ preserveOrderedListMarkers: true, preserveBackslashEscapes: true },
 			),
 		);
-		this.addChild(contentBox);
 	}
 
 	override render(width: number): string[] {
@@ -50,8 +50,16 @@ export class UserMessageComponent extends Container {
 			return lines;
 		}
 
+		// Grok-style: prepend accent bar to every non-empty line
+		const bar = theme.fg("accent", BAR) + " ";
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].trim().length > 0) {
+				lines[i] = bar + lines[i];
+			}
+		}
+
 		lines[0] = OSC133_ZONE_START + lines[0];
-		lines[lines.length - 1] = OSC133_ZONE_END + OSC133_ZONE_FINAL + lines[lines.length - 1];
+		lines[lines.length - 1] = lines[lines.length - 1] + OSC133_ZONE_END + OSC133_ZONE_FINAL;
 		return lines;
 	}
 }

@@ -1,10 +1,12 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
-import { Container, Markdown, type MarkdownTheme, Spacer, Text } from "@earendil-works/pi-tui";
+import { Container, Markdown, type MarkdownTheme, type Component, Spacer, Text } from "@earendil-works/pi-tui";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 
 const OSC133_ZONE_START = "\x1b]133;A\x07";
 const OSC133_ZONE_END = "\x1b]133;B\x07";
 const OSC133_ZONE_FINAL = "\x1b]133;C\x07";
+const BAR = "\u258c";
+const THIN_SP = "\u2009";
 
 /**
  * Component that renders a complete assistant message
@@ -69,6 +71,28 @@ export class AssistantMessageComponent extends Container {
 		}
 	}
 
+	/** Create a Markdown component with Grok-style thinking accent bar */
+	private makeThinkingBlock(text: string): Component {
+		const md = new Markdown(text.trim(), this.outputPad, 0, this.markdownTheme, {
+			color: (t: string) => theme.fg("thinkingText", t),
+			italic: true,
+		});
+		const origRender = md.render.bind(md);
+		md.render = (w: number) => {
+			const lines = origRender(w);
+			if (lines.length > 0) {
+				const bar = theme.fg("thinkingText", BAR) + THIN_SP;
+				for (let i = 0; i < lines.length; i++) {
+					if (lines[i].trim().length > 0) {
+						lines[i] = bar + lines[i];
+					}
+				}
+			}
+			return lines;
+		};
+		return md;
+	}
+
 	override render(width: number): string[] {
 		const lines = super.render(width);
 		if (this.hasToolCalls || lines.length === 0) {
@@ -117,13 +141,8 @@ export class AssistantMessageComponent extends Container {
 						this.contentContainer.addChild(new Spacer(1));
 					}
 				} else {
-					// Thinking traces in thinkingText color, italic
-					this.contentContainer.addChild(
-						new Markdown(content.thinking.trim(), this.outputPad, 0, this.markdownTheme, {
-							color: (text: string) => theme.fg("thinkingText", text),
-							italic: true,
-						}),
-					);
+					// Grok-style: thinking block with left accent bar
+					this.contentContainer.addChild(this.makeThinkingBlock(content.thinking));
 					if (hasVisibleContentAfter) {
 						this.contentContainer.addChild(new Spacer(1));
 					}

@@ -4,6 +4,7 @@ import { createAllToolDefinitions, type ToolName } from "../../../core/tools/ind
 import { getTextOutput as getRenderedTextOutput } from "../../../core/tools/render-utils.ts";
 import { convertToPng } from "../../../utils/image-convert.ts";
 import { theme } from "../theme/theme.ts";
+const BAR = "\u258c";
 
 export interface ToolExecutionOptions {
 	showImages?: boolean;
@@ -62,11 +63,9 @@ export class ToolExecutionComponent extends Container {
 
 		this.addChild(new Spacer(1));
 
-		// Always create all shell variants. contentBox is used for default renderer-based composition.
-		// selfRenderContainer is used when the tool renders its own framing.
-		// contentText is reserved for generic fallback rendering when no tool definition exists.
-		this.contentBox = new Box(1, 1, (text: string) => theme.bg("toolPendingBg", text));
-		this.contentText = new Text("", 1, 1, (text: string) => theme.bg("toolPendingBg", text));
+		// Grok-style: no background boxes, accent bars added in render()
+		this.contentBox = new Box(0, 0, (text: string) => text);
+		this.contentText = new Text("", 0, 0, (text: string) => text);
 		this.selfRenderContainer = new Container();
 
 		if (this.hasRendererDefinition()) {
@@ -218,6 +217,22 @@ export class ToolExecutionComponent extends Container {
 		this.updateDisplay();
 	}
 
+	private getBarColor(): (text: string) => string {
+		if (this.isPartial) return (text: string) => theme.fg("accent", text);
+		if (this.result?.isError) return (text: string) => theme.fg("error", text);
+		return (text: string) => theme.fg("success", text);
+	}
+
+	private addBars(lines: string[]): void {
+		if (lines.length === 0) return;
+		const barColor = this.getBarColor()(BAR) + "\u2009";
+		for (let i = 0; i < lines.length; i++) {
+			if (lines[i].trim().length > 0) {
+				lines[i] = barColor + lines[i];
+			}
+		}
+	}
+
 	override render(width: number): string[] {
 		if (this.hideComponent) {
 			return [];
@@ -244,18 +259,18 @@ export class ToolExecutionComponent extends Container {
 					lines.push(...imageComponent.render(width));
 				}
 			}
+			this.addBars(lines);
 			return lines;
 		}
 
-		return super.render(width);
+		const lines = super.render(width);
+		this.addBars(lines);
+		return lines;
 	}
 
 	private updateDisplay(): void {
-		const bgFn = this.isPartial
-			? (text: string) => theme.bg("toolPendingBg", text)
-			: this.result?.isError
-				? (text: string) => theme.bg("toolErrorBg", text)
-				: (text: string) => theme.bg("toolSuccessBg", text);
+		// Grok-style: no background, accent bars in render()
+		const bgFn = (text: string) => text;
 
 		let hasContent = false;
 		this.hideComponent = false;
@@ -313,7 +328,7 @@ export class ToolExecutionComponent extends Container {
 				}
 			}
 		} else {
-			this.contentText.setCustomBgFn(bgFn);
+			this.contentText.setCustomBgFn((text: string) => text);
 			this.contentText.setText(this.formatToolExecution());
 			hasContent = true;
 		}
