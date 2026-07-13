@@ -3123,7 +3123,6 @@ export class InteractiveMode {
         const changelogLine = theme.fg("muted", "Changelog: ") + changelogLink;
         const note = release.note?.trim();
         this.chatContainer.addChild(new Spacer(1));
-        this.chatContainer.addChild(new DynamicBorder((text) => theme.fg("warning", text)));
         this.chatContainer.addChild(new Text(`${theme.bold(theme.fg("warning", "Update Available"))}\n${updateInstruction}`, 1, 0));
         if (note) {
             this.chatContainer.addChild(new Spacer(1));
@@ -3133,7 +3132,6 @@ export class InteractiveMode {
             this.chatContainer.addChild(new Spacer(1));
         }
         this.chatContainer.addChild(new Text(changelogLine, 1, 0));
-        this.chatContainer.addChild(new DynamicBorder((text) => theme.fg("warning", text)));
         this.ui.requestRender();
     }
     showPackageUpdateNotification(packages) {
@@ -3141,9 +3139,7 @@ export class InteractiveMode {
         const updateInstruction = theme.fg("muted", "Package updates are available. Run ") + action;
         const packageLines = packages.map((pkg) => `- ${pkg}`).join("\n");
         this.chatContainer.addChild(new Spacer(1));
-        this.chatContainer.addChild(new DynamicBorder((text) => theme.fg("warning", text)));
         this.chatContainer.addChild(new Text(`${theme.bold(theme.fg("warning", "Package Updates Available"))}\n${updateInstruction}\n${theme.fg("muted", "Packages:")}\n${packageLines}`, 1, 0));
-        this.chatContainer.addChild(new DynamicBorder((text) => theme.fg("warning", text)));
         this.ui.requestRender();
     }
     /**
@@ -4329,11 +4325,11 @@ export class InteractiveMode {
         this.resetExtensionUI();
         const reloadBox = new Container();
         const borderColor = (s) => theme.fg("border", s);
-        reloadBox.addChild(new DynamicBorder(borderColor));
+        
         reloadBox.addChild(new Spacer(1));
         reloadBox.addChild(new Text(theme.fg("muted", "Reloading keybindings, extensions, skills, prompts, themes, and context files..."), 1, 0));
         reloadBox.addChild(new Spacer(1));
-        reloadBox.addChild(new DynamicBorder(borderColor));
+        
         const previousEditor = this.editor;
         this.editorContainer.clear();
         this.editorContainer.addChild(reloadBox);
